@@ -14,14 +14,13 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Initialize Telegram Bot (Webhook Mode)
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { webHook: true });
 
-// Set Telegram Webhook (Replace YOUR_DOMAIN)
-const webhookURL = `https://anonai29-bot.onrender.com${process.env.TELEGRAM_TOKEN}`;
-bot.setWebHook(webhookURL);
+// Set Webhook URL
+const webhookURL = `https://anonai29-bot.onrender.com/${process.env.TELEGRAM_TOKEN}`;
 
 app.use(express.json()); // Middleware to parse JSON
 
 // Handle incoming messages from Telegram
-app.post(`/bot${process.env.TELEGRAM_TOKEN}`, async (req, res) => {
+app.post(`/${process.env.TELEGRAM_TOKEN}`, async (req, res) => {
     const option = req.body;
 
     if (option.message) {
@@ -40,9 +39,10 @@ app.post(`/bot${process.env.TELEGRAM_TOKEN}`, async (req, res) => {
 // Function to get AI-generated response
 const getAIResponse = async (userInput) => {
     try {
-        const response = await openai.chat.completions.create({
+        const response = await openai.completions.create({
             model: "gpt-4",
             messages: [{ role: "user", content: userInput }],
+            temperature: 0.7,  // Adjust creativity
         });
 
         return response.choices[0].message.content.trim();
@@ -52,7 +52,14 @@ const getAIResponse = async (userInput) => {
     }
 };
 
-// Start Express server
-app.listen(port, () => {
+// Start Express server & Set Webhook
+app.listen(port, async () => {
     console.log(`Server running on port ${port}`);
+    
+    try {
+        await bot.setWebHook(webhookURL);
+        console.log(`Webhook set to ${webhookURL}`);
+    } catch (err) {
+        console.error("Failed to set webhook:", err);
+    }
 });
