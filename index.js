@@ -15,7 +15,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { webHook: true });
 
 // Set Telegram Webhook (Replace YOUR_DOMAIN)
-const webhookURL = `https://YOUR_DOMAIN.com/bot${process.env.TELEGRAM_TOKEN}`;
+const webhookURL = `https://anonai29-bot.onrender.com${process.env.TELEGRAM_TOKEN}`;
 bot.setWebHook(webhookURL);
 
 app.use(express.json()); // Middleware to parse JSON
