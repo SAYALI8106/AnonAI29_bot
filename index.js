@@ -1,60 +1,21 @@
 const TelegramBot = require('node-telegram-bot-api');
-const express = require('express');
-const axios = require('axios');
 const dotenv = require('dotenv');
-const { OpenAI } = require('openai');
-
+const axios = require('axios');
 dotenv.config();
-const app = express();
-const port = process.env.PORT || 3000;
+console.log(process.env.TELEGRAM_TOKEN);
 
-// Initialize OpenAI
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true});
 
-// Initialize Telegram Bot (Webhook Mode)
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { webHook: true });
-
-// Set Telegram Webhook
-const webhookURL = `https://anonai29-bot.onrender.com/bot${process.env.TELEGRAM_TOKEN}`;
-bot.setWebHook(webhookURL);
-
-app.use(express.json()); // Middleware to parse JSON
-
-// Handle incoming messages from Telegram
-app.post(`/bot${process.env.TELEGRAM_TOKEN}`, async (req, res) => {
-    const option = req.body;
-
-    if (option.message) {
-        const chatId = option.message.chat.id;
-        const userText = option.message.text;
-
-        console.log(`User: ${userText}`);
-
-        const botResponse = await getAIResponse(userText);
-        bot.sendMessage(chatId, botResponse);
-    }
-
-    res.sendStatus(200); // Success response
+bot.on('message', (option) => {
+    console.log("Message received on the bot:", option);
+    bot.sendMessage(option.chat.id, "Hello, I'm a JokeBot!. Please type /joke to get a random joke.");
 });
 
-// Function to get AI-generated response
-const getAIResponse = async (userInput) => {
-    try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4",
-            messages: [{ role: "user", content: userInput }],
-        });
+bot.onText(/\/joke/, async(option) => {
+   const response = await axios.get('http://www.official-joke-api.appspot.com/random_joke');
+   console.log(response.data);
 
-        return response.choices[0].message.content.trim();
-    } catch (error) {
-        console.error("AI Error:", error);
-        return "Oops! Something went wrong.";
-    }
-};
-
-// Start Express server
-app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
-    console.log(`✅ Webhook set to: ${webhookURL}`);
+   const setup = response.data.setup;
+   const punchline = response.data.punchline;
+   bot.sendMessage(option.chat.id, setup + "\n" + punchline);
 });
-
